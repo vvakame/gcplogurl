@@ -1,0 +1,57 @@
+name: Build & Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  GO111MODULE: "on"
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version:
+          - ~1.11
+          - ~1.15
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Get dependencies
+        run:  go mod download
+      - name: Build
+        run:  go build -v .
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v2.3.0
+        with:
+          version: v1.32
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          only-new-issues: true
+      - name: Test
+        run:  go test -v ./...
+  golangci:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version:
+          - ~1.15
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v2.3.0
+        with:
+          version: v1.32
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          only-new-issues: true

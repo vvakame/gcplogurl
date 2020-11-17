@@ -31,7 +31,7 @@ func TraceLogURL(ctx context.Context) (string, error) {
 	}
 	ex := &Explorer{
 		ProjectID: projectID,
-		Query:     fmt.Sprintf(`trace="projects/%s/traces/%s"`, projectID, span.SpanContext().TraceID.String()),
+		Query:     Query(fmt.Sprintf(`trace="projects/%s/traces/%s"`, projectID, span.SpanContext().TraceID.String())),
 		TimeRange: &SpecificTimeWithRange{
 			At:    time.Now(),
 			Range: 2 * time.Hour,

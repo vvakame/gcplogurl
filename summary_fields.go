@@ -1,8 +1,7 @@
 package gcplogurl
 
 import (
-	"io"
-	"net/url"
+	"bytes"
 	"strconv"
 )
 
@@ -24,26 +23,29 @@ type SummaryFields struct {
 	TruncateFrom TruncateFrom
 }
 
-func (sf *SummaryFields) marshalURL(w io.Writer) {
-	_, _ = w.Write([]byte(";summaryFields="))
+func (sf *SummaryFields) marshalURL(vs values) {
+	vs.Del("summaryFields")
+	var last string
 	for idx, f := range sf.Fields {
-		if idx != 0 {
-			_, _ = w.Write([]byte(","))
+		last = f
+		if idx != (len(sf.Fields) - 1) {
+			vs.Add("summaryFields", escape(f))
 		}
-		_, _ = w.Write([]byte(url.QueryEscape(f)))
 	}
-	_, _ = w.Write([]byte(":"))
-	_, _ = w.Write([]byte(strconv.FormatBool(sf.Truncate)))
-	_, _ = w.Write([]byte(":"))
+	buf := bytes.NewBufferString(escape(last))
+	buf.WriteByte(':')
+	buf.WriteString(strconv.FormatBool(sf.Truncate))
+	buf.WriteByte(':')
 	ml := sf.MaxLen
 	if ml == 0 {
 		ml = 32
 	}
-	_, _ = w.Write([]byte(strconv.Itoa(ml)))
-	_, _ = w.Write([]byte(":"))
+	buf.WriteString(strconv.Itoa(ml))
+	buf.WriteByte(':')
 	tf := sf.TruncateFrom
 	if tf == "" {
 		tf = TruncateFromEnd
 	}
-	_, _ = w.Write([]byte(tf))
+	buf.WriteString(string(tf))
+	vs.Add("summaryFields", buf.String())
 }

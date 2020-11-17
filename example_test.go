@@ -6,8 +6,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/vvakame/gcplogurl"
 	"go.opencensus.io/trace"
+
+	"github.com/vvakame/gcplogurl"
 )
 
 func Example() {

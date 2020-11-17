@@ -1,8 +1,7 @@
 package gcplogurl
 
 import (
-	"io"
-	"net/url"
+	"bytes"
 	"time"
 
 	"github.com/rickb777/date/period"
@@ -11,7 +10,7 @@ import (
 // TimeRange means when to display the logs.
 type TimeRange interface {
 	isTimeRange()
-	marshalURL(w io.Writer)
+	marshalURL(vs values)
 }
 
 var _ TimeRange = (*RecentRange)(nil)
@@ -25,10 +24,9 @@ type RecentRange struct {
 
 func (t *RecentRange) isTimeRange() {}
 
-func (t *RecentRange) marshalURL(w io.Writer) {
-	_, _ = w.Write([]byte(";timeRange="))
+func (t *RecentRange) marshalURL(vs values) {
 	p, _ := period.NewOf(t.Last)
-	_, _ = w.Write([]byte(p.String()))
+	vs.Set("timeRange", p.String())
 }
 
 // SpecificTimeBetween pvovides custom range.
@@ -39,15 +37,16 @@ type SpecificTimeBetween struct {
 
 func (t *SpecificTimeBetween) isTimeRange() {}
 
-func (t *SpecificTimeBetween) marshalURL(w io.Writer) {
-	_, _ = w.Write([]byte(";timeRange="))
+func (t *SpecificTimeBetween) marshalURL(vs values) {
+	var buf bytes.Buffer
 	if v := t.From; !v.IsZero() {
-		_, _ = w.Write([]byte(v.In(time.UTC).Format(time.RFC3339Nano)))
+		buf.WriteString(v.In(time.UTC).Format(time.RFC3339Nano))
 	}
-	_, _ = w.Write([]byte(url.QueryEscape("/")))
+	buf.WriteString("/")
 	if v := t.To; !v.IsZero() {
-		_, _ = w.Write([]byte(v.In(time.UTC).Format(time.RFC3339Nano)))
+		buf.WriteString(v.In(time.UTC).Format(time.RFC3339Nano))
 	}
+	vs.Set("timeRange", buf.String())
 }
 
 // SpecificTimeWithRange provides jump tp time.
@@ -58,12 +57,14 @@ type SpecificTimeWithRange struct {
 
 func (t *SpecificTimeWithRange) isTimeRange() {}
 
-func (t *SpecificTimeWithRange) marshalURL(w io.Writer) {
-	_, _ = w.Write([]byte(";timeRange="))
-	_, _ = w.Write([]byte(t.At.In(time.UTC).Format(time.RFC3339Nano)))
-	_, _ = w.Write([]byte(url.QueryEscape("/")))
-	_, _ = w.Write([]byte(t.At.In(time.UTC).Format(time.RFC3339Nano)))
-	_, _ = w.Write([]byte(url.QueryEscape("--")))
+func (t *SpecificTimeWithRange) marshalURL(vs values) {
+	var buf bytes.Buffer
+	buf.WriteString(t.At.In(time.UTC).Format(time.RFC3339Nano))
+	buf.WriteString("/")
+	buf.WriteString(t.At.In(time.UTC).Format(time.RFC3339Nano))
+	buf.WriteString("--")
 	p, _ := period.NewOf(t.Range)
-	_, _ = w.Write([]byte(p.String()))
+	buf.WriteString(p.String())
+
+	vs.Set("timeRange", buf.String())
 }

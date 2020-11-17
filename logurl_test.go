@@ -15,8 +15,9 @@ func TestExplorer(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
+		// Query
 		{
-			name: "basic",
+			name: "query",
 			obj: &gcplogurl.Explorer{
 				ProjectID: "test-project",
 				Query:     `trace="projects/test-project/traces/2f029f622a49837d621cbe6dc5e5d146"`,
@@ -33,7 +34,7 @@ func TestExplorer(t *testing.T) {
 			want: "https://console.cloud.google.com/logs/query;storageScope=project?project=test-project",
 		},
 		{
-			name: "storage scope - project",
+			name: "storage scope - storage",
 			obj: &gcplogurl.Explorer{
 				ProjectID: "test-project",
 				StorageScope: &gcplogurl.StorageScopeStorage{
@@ -110,7 +111,7 @@ func TestExplorer(t *testing.T) {
 					TruncateFrom: gcplogurl.TruncateFromBeginning,
 				},
 			},
-			want: "https://console.cloud.google.com/logs/query;summaryFields=trace,protoPayload%2Fresource:true:16:beginning?project=test-project",
+			want: "https://console.cloud.google.com/logs/query;summaryFields=trace,protoPayload%252Fresource:true:16:beginning?project=test-project",
 		},
 		{
 			name: "summary fields with zero value",
@@ -120,7 +121,19 @@ func TestExplorer(t *testing.T) {
 					Fields: []string{"trace", "protoPayload/resource"},
 				},
 			},
-			want: "https://console.cloud.google.com/logs/query;summaryFields=trace,protoPayload%2Fresource:false:32:end?project=test-project",
+			want: "https://console.cloud.google.com/logs/query;summaryFields=trace,protoPayload%252Fresource:false:32:end?project=test-project",
+		},
+		{
+			name: "summary fields with strange value",
+			obj: &gcplogurl.Explorer{
+				ProjectID: "test-project",
+				SummaryFields: &gcplogurl.SummaryFields{
+					Fields: []string{"foo;bar", "foo bar"},
+				},
+			},
+			want: "https://console.cloud.google.com/logs/query;summaryFields=foo%253Bbar,foo%2520bar:false:32:end?project=test-project",
+			// TODO: `foo bar` should be encode to escape(`"foo bar"`), but I can't guess the rule.
+			// want: "https://console.cloud.google.com/logs/query;summaryFields=foo%253Bbar,%2522foo%2520bar%2522:false:32:end?project=test-project",
 		},
 		// all in one!
 		{
@@ -144,7 +157,7 @@ func TestExplorer(t *testing.T) {
 					TruncateFrom: gcplogurl.TruncateFromBeginning,
 				},
 			},
-			want: "https://console.cloud.google.com/logs/query;storageScope=storage,projects%2Ftest-project%2Flocations%2Fglobal%2Fbuckets%2F_Default%2Fviews%2F_AllLogs,projects%2Ftest-project%2Flocations%2Fglobal%2Fbuckets%2F_Default%2Fviews%2F_Default;timeRange=2020-11-13T19:20:00Z%2F2020-11-13T19:20:00Z--PT2H;summaryFields=trace,protoPayload%2Fresource:true:16:beginning?project=test-project",
+			want: "https://console.cloud.google.com/logs/query;storageScope=storage,projects%2Ftest-project%2Flocations%2Fglobal%2Fbuckets%2F_Default%2Fviews%2F_AllLogs,projects%2Ftest-project%2Flocations%2Fglobal%2Fbuckets%2F_Default%2Fviews%2F_Default;summaryFields=trace,protoPayload%252Fresource:true:16:beginning;timeRange=2020-11-13T19:20:00Z%2F2020-11-13T19:20:00Z--PT2H?project=test-project",
 		},
 	}
 	for _, tt := range tests {
@@ -154,14 +167,16 @@ func TestExplorer(t *testing.T) {
 			got := lp.String()
 			if got != tt.want {
 				t.Errorf("Build() got = %v, want %v", got, tt.want)
-			}
-
-			u, err := url.Parse(got)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if u.String() != got {
-				t.Errorf("unexpected: %v", u.String())
+				u1, err := url.Parse(got)
+				if err != nil {
+					t.Fatal(err)
+				}
+				u2, err := url.Parse(tt.want)
+				if err != nil {
+					t.Fatal(err)
+				}
+				t.Log("got ", u1.Path, u1.RawPath)
+				t.Log("want", u2.Path, u2.RawPath)
 			}
 		})
 	}

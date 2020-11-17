@@ -1,14 +1,9 @@
 package gcplogurl
 
-import (
-	"io"
-	"net/url"
-)
-
 // StorageScope means scope about logs.
 type StorageScope interface {
 	isStorageScope()
-	marshalURL(w io.Writer)
+	marshalURL(vs values)
 }
 
 var _ StorageScope = StorageScopeProject
@@ -21,8 +16,8 @@ type storageScopeProject int
 
 func (storageScopeProject) isStorageScope() {}
 
-func (storageScopeProject) marshalURL(w io.Writer) {
-	_, _ = w.Write([]byte(";storageScope=project"))
+func (storageScopeProject) marshalURL(vs values) {
+	vs.Set("storageScope", "project")
 }
 
 // StorageScopeStorage use scope by storage.
@@ -32,10 +27,9 @@ type StorageScopeStorage struct {
 
 func (s *StorageScopeStorage) isStorageScope() {}
 
-func (s *StorageScopeStorage) marshalURL(w io.Writer) {
-	_, _ = w.Write([]byte(";storageScope=storage"))
+func (s *StorageScopeStorage) marshalURL(vs values) {
+	vs.Set("storageScope", "storage")
 	for _, src := range s.Src {
-		_, _ = w.Write([]byte(","))
-		_, _ = w.Write([]byte(url.QueryEscape(src)))
+		vs.Add("storageScope", src)
 	}
 }

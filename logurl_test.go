@@ -135,6 +135,22 @@ func TestExplorer(t *testing.T) {
 			// TODO: `foo bar` should be encode to escape(`"foo bar"`), but I can't guess the rule.
 			// want: "https://console.cloud.google.com/logs/query;summaryFields=foo%253Bbar,%2522foo%2520bar%2522:false:32:end?project=test-project",
 		},
+		{
+			name: "custom fields",
+			obj: &gcplogurl.Explorer{
+				ProjectID:    "test-project",
+				CustomFields: []string{"jsonPayload/statusDetails"},
+			},
+			want: "https://console.cloud.google.com/logs/query;lfeCustomFields=jsonPayload%252FstatusDetails?project=test-project",
+		},
+		{
+			name: "custom fields - with two fields",
+			obj: &gcplogurl.Explorer{
+				ProjectID:    "test-project",
+				CustomFields: []string{"jsonPayload/statusDetails", "jsonPayload/enforcedSecurityPolicy/name"},
+			},
+			want: "https://console.cloud.google.com/logs/query;lfeCustomFields=jsonPayload%252FstatusDetails,jsonPayload%252FenforcedSecurityPolicy%252Fname?project=test-project",
+		},
 		// all in one!
 		{
 			name: "all in one",
@@ -156,8 +172,9 @@ func TestExplorer(t *testing.T) {
 					MaxLen:       16,
 					TruncateFrom: gcplogurl.TruncateFromBeginning,
 				},
+				CustomFields: []string{"jsonPayload/statusDetails"},
 			},
-			want: "https://console.cloud.google.com/logs/query;storageScope=storage,projects%2Ftest-project%2Flocations%2Fglobal%2Fbuckets%2F_Default%2Fviews%2F_AllLogs,projects%2Ftest-project%2Flocations%2Fglobal%2Fbuckets%2F_Default%2Fviews%2F_Default;summaryFields=trace,protoPayload%252Fresource:true:16:beginning;timeRange=2020-11-13T19:20:00Z%2F2020-11-13T19:20:00Z--PT2H?project=test-project",
+			want: "https://console.cloud.google.com/logs/query;lfeCustomFields=jsonPayload%252FstatusDetails;storageScope=storage,projects%2Ftest-project%2Flocations%2Fglobal%2Fbuckets%2F_Default%2Fviews%2F_AllLogs,projects%2Ftest-project%2Flocations%2Fglobal%2Fbuckets%2F_Default%2Fviews%2F_Default;summaryFields=trace,protoPayload%252Fresource:true:16:beginning;timeRange=2020-11-13T19:20:00Z%2F2020-11-13T19:20:00Z--PT2H?project=test-project",
 		},
 	}
 	for _, tt := range tests {

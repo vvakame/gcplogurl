@@ -20,6 +20,8 @@ type Explorer struct {
 	TimeRange TimeRange
 	// SummaryFields for manage summary fields.
 	SummaryFields *SummaryFields
+	// CustomFields are added to the log fields pane.
+	CustomFields CustomFields
 }
 
 // String returns represent of Explorer URL.
@@ -47,6 +49,9 @@ func (ex *Explorer) String() string {
 		v.marshalURL(vs)
 	}
 	if v := ex.SummaryFields; v != nil {
+		v.marshalURL(vs)
+	}
+	if v := ex.CustomFields; v != nil {
 		v.marshalURL(vs)
 	}
 	if u.RawPath == "" {
